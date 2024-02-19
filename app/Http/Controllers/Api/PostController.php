@@ -11,7 +11,7 @@ use App\Http\Controllers\Controller;
 
 //import Resource "PostResource"
 use App\Http\Resources\PostResource;
-
+use GuzzleHttp\Psr7\Response;
 //import Facade "Validator"
 use Illuminate\Support\Facades\Validator;
 
@@ -42,8 +42,8 @@ class PostController extends Controller
         //define validation rules
         $validator = Validator::make($request->all(), [
             'image'     => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'title'     => 'required',
-            'content'   => 'required',
+            'title'     => 'required | min:10',
+            'content'   => 'required | min:10',
         ]);
 
         //check if validation fails
@@ -64,10 +64,9 @@ class PostController extends Controller
 
         //return response
         return new PostResource(true, 'Data Post Berhasil Ditambahkan!', $post);
-        
     }
 
-    
+
     /**
      * show
      *
@@ -83,39 +82,39 @@ class PostController extends Controller
         return new PostResource(true, 'Detail Data Post!', $post);
     }
 
+
     public function update(Request $request, $id)
     {
-        //define validation rules
+
+        // define validator rules
         $validator = Validator::make($request->all(), [
-            'title'     => 'required',
-            'content'   => 'required',
+            'title' => 'required | min:10',
+            'content' => 'required | min:10',
+
         ]);
 
-        //check if validation fails
+        // check validator 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return Response()->json($validator->errors(), 422);
         }
 
-        //find post by ID
+        // get ID
         $post = Post::find($id);
 
-        //check if image is not empty
+        // check image if not empty
         if ($request->hasFile('image')) {
 
-            //upload image
             $image = $request->file('image');
             $image->storeAs('public/posts', $image->hashName());
 
             //delete old image
-            Storage::delete('public/posts/'.basename($post->image));
+            Storage::delete('public/posts/' . basename($post->image));
 
-            //update post with new image
             $post->update([
                 'image'     => $image->hashName(),
                 'title'     => $request->title,
                 'content'   => $request->content,
             ]);
-
         } else {
 
             //update post without image
@@ -129,7 +128,7 @@ class PostController extends Controller
         return new PostResource(true, 'Data Post Berhasil Diubah!', $post);
     }
 
-    
+
     /**
      * destroy
      *
@@ -143,7 +142,7 @@ class PostController extends Controller
         $post = Post::find($id);
 
         //delete image
-        Storage::delete('public/posts/'.basename($post->image));
+        Storage::delete('public/posts/' . basename($post->image));
 
         //delete post
         $post->delete();
